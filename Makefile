@@ -2,7 +2,7 @@
 
 all: help
 
-help: 
+help:
 	@echo make [ clean macpaste run ]
 
 clean:
