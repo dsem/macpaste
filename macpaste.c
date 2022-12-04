@@ -14,6 +14,7 @@
 //
 // Terminate with Ctrl+C
 
+#include "subprocess.h"
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h> // kVK_ANSI_*
 #include <sys/time.h>      // gettimeofday
@@ -93,6 +94,24 @@ static char isDoubleClickSpeed() {
 
 static char isDoubleClick() { return isDoubleClickSpeed(); }
 
+// Determine whether the active window is iTerm
+// HELPME: this is implemented as a spawning of a python subprocess because I don't know how to do this in c. This should be done in c.
+bool isIterm() {
+  const char iterm[] = {"iTerm2"};
+  const char *active_window[2] = {"get-active-window", NULL};
+  struct subprocess_s subprocess;
+  int result = subprocess_create(active_window, 16, &subprocess);
+  if (result != 0) {
+    printf("%s\n", "An error occured calling \"get-active-window\"");
+    return FALSE;
+  }
+
+  FILE *p_stdout = subprocess_stdout(&subprocess);
+  char process_name[7];
+  fgets(process_name, 7, p_stdout);
+  return strcmp(process_name, iterm) == 0;
+}
+
 static CGEventRef mouseCallback(CGEventTapProxy proxy, CGEventType type,
                                 CGEventRef event, void *refcon) {
   int *dontpaste = refcon;
@@ -107,7 +126,7 @@ static CGEventRef mouseCallback(CGEventTapProxy proxy, CGEventType type,
     break;
 
   case kCGEventLeftMouseUp:
-    if (isDoubleClick() || isDragging) {
+    if (!isIterm() && (isDoubleClick() || isDragging)) {
       copy();
     }
     isDragging = 0;
