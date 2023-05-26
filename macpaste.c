@@ -39,7 +39,33 @@ long long now() {
   return milliseconds;
 }
 
+// Determine whether the active window is iTerm
+bool isIterm() {
+  const char iterm[] = {"iTerm2"};
+  // HELPME: this is implemented as a spawning of a python subprocess
+  // because I don't know how to do this in c. This should be done in c.
+  const char *active_window[2] = {"get-active-window", NULL};
+  struct subprocess_s subprocess;
+  int result = subprocess_create(active_window, subprocess_option_search_user_path, &subprocess);
+  if (result != 0) {
+    // After about 10 minutes (or n number of times this is called?) we begin seeing an error
+    // I am not skilled enough to debug further.  So if we get here, we can kill ourselves and
+    // we'll be re-spawned.
+    printf("%s\n", "An error occured calling \"get-active-window\"");
+    /* return FALSE; */
+    exit(1);
+  }
+
+  FILE *p_stdout = subprocess_stdout(&subprocess);
+  char process_name[7];
+  fgets(process_name, 7, p_stdout);
+  return strcmp(process_name, iterm) == 0;
+}
+
 static void paste(CGEventRef event) {
+  if (isIterm()) {
+    return;
+  }
   // Mouse click to focus and position insertion cursor.
   CGPoint mouseLocation = CGEventGetLocation(event);
   CGEventRef mouseClickDown = CGEventCreateMouseEvent(
@@ -93,24 +119,6 @@ static char isDoubleClickSpeed() {
 }
 
 static char isDoubleClick() { return isDoubleClickSpeed(); }
-
-// Determine whether the active window is iTerm
-// HELPME: this is implemented as a spawning of a python subprocess because I don't know how to do this in c. This should be done in c.
-bool isIterm() {
-  const char iterm[] = {"iTerm2"};
-  const char *active_window[2] = {"get-active-window", NULL};
-  struct subprocess_s subprocess;
-  int result = subprocess_create(active_window, 16, &subprocess);
-  if (result != 0) {
-    printf("%s\n", "An error occured calling \"get-active-window\"");
-    return FALSE;
-  }
-
-  FILE *p_stdout = subprocess_stdout(&subprocess);
-  char process_name[7];
-  fgets(process_name, 7, p_stdout);
-  return strcmp(process_name, iterm) == 0;
-}
 
 static CGEventRef mouseCallback(CGEventTapProxy proxy, CGEventType type,
                                 CGEventRef event, void *refcon) {
