@@ -6,7 +6,7 @@
 		<string>local.macpaste</string>
 		<key>ProgramArguments</key>
 		<array>
-            <string>$HOME/.local/bin/macpaste</string>
+			<string>$HOME/.local/bin/macpaste</string>
 			<string>$ARG</string>
 		</array>
 		<key>RunAtLoad</key>
